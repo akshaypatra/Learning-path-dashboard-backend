@@ -5,3 +5,4 @@ client=pymongo.MongoClient(url)
 
 
 db=client['learning-path-dashboard']
+

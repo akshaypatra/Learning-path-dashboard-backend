@@ -24,12 +24,17 @@ class BaseUser:
     def __str__(self):
         return f"{self.name} ({self.role})"
 
+
 class Teacher(BaseUser):
     def __init__(self, name, email, password, employeeID):
         super().__init__("teacher", name, email, password)
         self.employeeID = employeeID
 
     def save(self):
+        # Check if employeeID is unique
+        if db["teachers"].find_one({"employeeID": self.employeeID, "email": {"$ne": self.email}}):
+            raise ValueError(f"Teacher with employee ID {self.employeeID} already exists.")
+
         # Save the Teacher document to the MongoDB collection
         teacher_collection = db["teachers"]
         teacher_data = {
@@ -44,6 +49,7 @@ class Teacher(BaseUser):
     def __str__(self):
         return f"{self.name} - {self.employeeID}"
 
+
 class Student(BaseUser):
     def __init__(self, name, email, password, enrollmentNumber, department):
         super().__init__("student", name, email, password)
@@ -51,6 +57,10 @@ class Student(BaseUser):
         self.department = department
 
     def save(self):
+        # Check if enrollmentNumber is unique
+        if db["students"].find_one({"enrollmentNumber": self.enrollmentNumber, "email": {"$ne": self.email}}):
+            raise ValueError(f"Student with enrollment number {self.enrollmentNumber} already exists.")
+
         # Save the Student document to the MongoDB collection
         student_collection = db["students"]
         student_data = {
