@@ -1,8 +1,7 @@
-
-
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 from db_connection import db
+from rest_framework.exceptions import ValidationError
 
 # BaseUser Serializer
 class BaseUserSerializer(serializers.Serializer):
@@ -27,6 +26,20 @@ class BaseUserSerializer(serializers.Serializer):
 class TeacherSerializer(BaseUserSerializer):
     employeeID = serializers.CharField(max_length=20)
 
+    def validate_email(self, value):
+        # Check if the email already exists for a teacher
+        existing_teacher = db["teachers"].find_one({"email": value})
+        if existing_teacher:
+            raise ValidationError("A teacher with this email already exists.")
+        return value
+
+    def validate_employeeID(self, value):
+        # Check if the employeeID already exists for a teacher
+        existing_teacher = db["teachers"].find_one({"employeeID": value})
+        if existing_teacher:
+            raise ValidationError("A teacher with this employee ID already exists.")
+        return value
+
     def create(self, validated_data):
         validated_data['role'] = 'teacher'
         return super().create(validated_data)
@@ -39,6 +52,20 @@ class TeacherSerializer(BaseUserSerializer):
 class StudentSerializer(BaseUserSerializer):
     enrollmentNumber = serializers.CharField(max_length=20)
     department = serializers.CharField(max_length=100)
+
+    def validate_email(self, value):
+        # Check if the email already exists for a student
+        existing_student = db["students"].find_one({"email": value})
+        if existing_student:
+            raise ValidationError("A student with this email already exists.")
+        return value
+
+    def validate_enrollmentNumber(self, value):
+        # Check if the enrollmentNumber already exists for a student
+        existing_student = db["students"].find_one({"enrollmentNumber": value})
+        if existing_student:
+            raise ValidationError("A student with this enrollment number already exists.")
+        return value
 
     def create(self, validated_data):
         validated_data['role'] = 'student'
