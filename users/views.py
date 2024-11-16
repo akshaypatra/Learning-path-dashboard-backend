@@ -1,8 +1,10 @@
-from .serializers import TeacherSerializer, StudentSerializer
+from .serializers import TeacherSerializer, StudentSerializer, LoginSerializer
 from db_connection import db
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from .models import BaseUser
 
 class TeacherListCreateView(APIView):
     """
@@ -19,7 +21,7 @@ class TeacherListCreateView(APIView):
 
             # Check for duplicates in email or employee ID
             duplicate_email = db["teachers"].find_one({"email": teacher_data["email"]})
-            duplicate_employee_id = db["teachers"].find_one({"employeeId": teacher_data["employeeID"]})
+            duplicate_employee_id = db["teachers"].find_one({"employeeID": teacher_data["employeeID"]})
 
             if duplicate_email:
                 return Response(
@@ -41,7 +43,6 @@ class TeacherListCreateView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class TeacherDetailView(APIView):
@@ -141,3 +142,31 @@ class StudentDetailView(APIView):
         return Response({"detail": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+
+class LoginView(APIView):
+    """
+    Handles user login.
+    """
+
+    def post(self, request, format=None):
+        # Deserialize the incoming request data using the LoginSerializer
+        serializer = LoginSerializer(data=request.data)
+        
+        # Check if the serializer data is valid
+        if serializer.is_valid():
+            # Get the validated user data
+            user_data = serializer.validated_data  # Contains user info and token
+
+            # Return a successful response with token and role
+            return Response(
+                {
+                    "message": "Login successful",
+                    "token": user_data['token'],  # Access token
+                    "refresh_token": user_data['refresh_token'],  # Refresh token
+                    "role": user_data.get("role", "user")  # Role (e.g., 'teacher', 'student')
+                },
+                status=status.HTTP_200_OK
+            )
+        
+        # If serializer is invalid, return errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
