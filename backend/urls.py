@@ -5,4 +5,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('users.urls')),  # Include users app routes
+    path('api/learning-paths/',include('learning_paths.urls')),
 ]
