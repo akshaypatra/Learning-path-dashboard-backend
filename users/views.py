@@ -163,7 +163,8 @@ class LoginView(APIView):
                     "message": "Login successful",
                     "token": user_data['token'],  # Access token
                     "refresh_token": user_data['refresh_token'],  # Refresh token
-                    "role": user_data.get("role", "user")  # Role (e.g., 'teacher', 'student')
+                    "role": user_data.get("role", "user"),  # Role (e.g., 'teacher', 'student')
+                    "employeeID":user_data["employeeID"]
                 },
                 status=status.HTTP_200_OK
             )

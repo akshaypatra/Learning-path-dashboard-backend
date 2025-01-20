@@ -127,8 +127,17 @@ class LoginSerializer(serializers.Serializer):
             "email": user["email"],
             "role": role,
             "token": token_data['access'],
-            "refresh_token": token_data['refresh']
+            "refresh_token": token_data['refresh'],
+            
+
         }
+
+        if role == "teacher":
+            user_data["employeeID"] = user.get("employeeID")
+        elif role == "student":
+            user_data["enrollmentNumber"] = user.get("enrollmentNumber")
+
+        # print(user_data)
 
         return user_data
     

@@ -44,6 +44,7 @@ class LearningPathView(APIView):
                 document = self.mongo_service.find_by_id(self.collection_name, pk)
                 if document:
                     document["_id"] = str(document["_id"])
+
                     return Response(document, status=status.HTTP_200_OK)
                 else:
                     return Response({"error": "Learning path not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -54,6 +55,7 @@ class LearningPathView(APIView):
                 documents = self.mongo_service.find_all(self.collection_name)
                 for doc in documents:
                     doc["_id"] = str(doc["_id"])  # Convert ObjectId to string
+                   
                 return Response(documents, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
