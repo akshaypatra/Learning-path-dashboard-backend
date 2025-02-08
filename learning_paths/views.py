@@ -64,13 +64,34 @@ class LearningPathView(APIView):
         """Update a learning path by ID."""
         try:
             update_data = request.data
-            modified_count = self.mongo_service.update_one(self.collection_name, pk, update_data)
+            existing_data = self.mongo_service.find_by_id(self.collection_name, pk)
+
+            if not existing_data:
+                return Response({"error": "No document found with the given ID."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Calculate new progress based on completed topics
+            all_topics = [topic for unit in update_data["learningPath"] for topic in unit["topics"]]
+            completed_topics = sum(1 for topic in all_topics if topic["completed"])
+            progress_percentage = round((completed_topics / len(all_topics))*1,1) if all_topics else 0.0
+
+
+
+            # modified_count = self.mongo_service.update_one(self.collection_name, pk, update_data)
+            modified_count = self.mongo_service.update_one(
+            self.collection_name, pk,
+            {
+                "learningPath": update_data["learningPath"],
+                "progress": progress_percentage
+            }
+        )
             if modified_count:
-                return Response({"message": "Learning path updated successfully!"}, status=status.HTTP_200_OK)
+                return Response({"message": "Learning path updated successfully!", "progress": progress_percentage}, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "No document found with the given ID."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
 
     def delete(self, request, pk):
         """Delete a learning path by ID."""
