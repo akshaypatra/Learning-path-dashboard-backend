@@ -133,9 +133,9 @@ class LoginSerializer(serializers.Serializer):
         }
 
         if role == "teacher":
-            user_data["employeeID"] = user.get("employeeID")
+            user_data["employeeID"] = user.get("employeeID","Not Available")
         elif role == "student":
-            user_data["enrollmentNumber"] = user.get("enrollmentNumber")
+            user_data["enrollmentNumber"] = user.get("enrollmentNumber","Not Available")
 
         # print(user_data)
 

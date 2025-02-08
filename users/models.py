@@ -70,7 +70,7 @@ class BaseUser:
                     email=user["email"],
                     password=user["password"],
                     user_id=user_id,  
-                    employeeID=user["employeeID"]
+                    employeeID=user.get("employeeID", None)
                 )
             elif "enrollmentNumber" in user:
                 # This is a student
