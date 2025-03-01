@@ -4,6 +4,15 @@ from db_connection import db
 from rest_framework.exceptions import ValidationError, AuthenticationFailed
 from bson import ObjectId
 from .models import BaseUser
+import datetime
+from django.conf import settings
+import jwt
+
+# JWT Configuration
+SECRET_KEY = settings.SECRET_KEY  # Ensure it's in settings.py
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRATION_HOURS = 2
+REFRESH_TOKEN_EXPIRATION_DAYS = 7
 
 # BaseUser Serializer
 class BaseUserSerializer(serializers.Serializer):
@@ -119,15 +128,16 @@ class LoginSerializer(serializers.Serializer):
         )
 
         # Generate the JWT token
-        token_data = user_instance.generate_jwt_token()
+        access_token = self.generate_access_token(user_instance)
+        refresh_token = self.generate_refresh_token(user_instance)
 
         # Return the user data along with the access and refresh tokens
         user_data = {
             "id": user_id,
             "email": user["email"],
             "role": role,
-            "token": token_data['access'],
-            "refresh_token": token_data['refresh'],
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             
 
         }
@@ -140,5 +150,25 @@ class LoginSerializer(serializers.Serializer):
         # print(user_data)
 
         return user_data
+    
+    def generate_access_token(self, user):
+        """Generate a short-lived access token."""
+        payload = {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=ACCESS_TOKEN_EXPIRATION_HOURS),
+            "iat": datetime.datetime.now(datetime.timezone.utc)
+        }
+        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+    def generate_refresh_token(self, user):
+        """Generate a long-lived refresh token."""
+        payload = {
+            "user_id": user.id,
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=REFRESH_TOKEN_EXPIRATION_DAYS),
+            "iat": datetime.datetime.now(datetime.timezone.utc)
+        }
+        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     
    

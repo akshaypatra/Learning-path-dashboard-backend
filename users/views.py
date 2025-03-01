@@ -5,6 +5,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from .models import BaseUser
+import jwt
+from django.conf import settings
+
+from rest_framework.permissions import IsAuthenticated
 
 class TeacherListCreateView(APIView):
     """
@@ -101,6 +105,8 @@ class StudentListCreateView(APIView):
                     {"error": "A student with this enrollment number already exists.", "data": duplicate_enrollment_number},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            
+            
 
             db["students"].insert_one(student_data)  # Save the student
             return Response(
@@ -150,6 +156,7 @@ class LoginView(APIView):
 
     def post(self, request, format=None):
         # Deserialize the incoming request data using the LoginSerializer
+       
         serializer = LoginSerializer(data=request.data)
         
         # Check if the serializer data is valid
@@ -161,13 +168,63 @@ class LoginView(APIView):
             return Response(
                 {
                     "message": "Login successful",
-                    "token": user_data['token'],  # Access token
-                    "refresh_token": user_data['refresh_token'],  # Refresh token
+                    "access_token": user_data['access_token'],  
+                    "refresh_token": user_data['refresh_token'],
                     "role": user_data.get("role", "user"),  # Role (e.g., 'teacher', 'student')
-                    "employeeID":user_data.get("employeeID", None)
+                    "employeeID":user_data.get("employeeID", None),
+                    "classID":user_data.get("classID",None)
                 },
                 status=status.HTTP_200_OK
             )
         
         # If serializer is invalid, return errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class UpdateClassIDView(APIView):
+    def get_user_from_token(self, request):
+        """Extracts and decodes JWT token manually."""
+        auth_header = request.headers.get("Authorization", None)
+        if not auth_header:
+            return None, Response({"error": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            token = auth_header.split(" ")[1]  # Extract token after 'Bearer'
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            return payload, None  # Return payload data if valid
+        except jwt.ExpiredSignatureError:
+            return None, Response({"error": "Token has expired."}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.InvalidTokenError:
+            return None, Response({"error": "Invalid token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request, format=None):
+        """Updates the student's classID if valid."""
+        # Decode user from JWT
+        payload, error_response = self.get_user_from_token(request)
+        if error_response:
+            return error_response  # Return authentication error
+
+        student_email = payload.get("email")  # Get student email from token
+        if not student_email:
+            return Response({"error": "Invalid user."}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_class_id = request.data.get("classID")  # Get new classID from request
+
+        if not new_class_id:
+            return Response({"error": "ClassID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if student exists in MongoDB
+        student = db["students"].find_one({"email": student_email})
+        if not student:
+            return Response({"error": "Student not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Validate if the classID exists in learning_path
+        class_exists = db["learning_paths"].find_one({"classID": new_class_id})
+        if not class_exists:
+            return Response({"error": "Invalid classID. No class found in learning_path."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the classID in the student's record
+        db["students"].update_one({"email": student_email}, {"$set": {"classID": new_class_id}})
+
+        return Response({"message": f"ClassID updated to {new_class_id} successfully."}, status=status.HTTP_200_OK)

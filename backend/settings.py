@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
+import datetime
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,6 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-r*fn6n1kiwn7nf8381r$w_9*=m&%s(som=m(gxuddcoz#jqq7z'
+
+JWT_AUTH = {
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(hours=2),  # Access token valid for 2 hours
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=7),  # Refresh token valid for 7 days
+    "ALGORITHM": "HS256",  # JWT signing algorithm
+}
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -104,9 +112,9 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',  # Adjust per your needs
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
+  
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
     ],
 }
 
