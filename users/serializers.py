@@ -124,7 +124,8 @@ class LoginSerializer(serializers.Serializer):
             name=user["name"], 
             email=user["email"], 
             password=user["password"],
-            user_id=user_id  
+            user_id=user_id 
+            
         )
 
         # Generate the JWT token
@@ -137,8 +138,7 @@ class LoginSerializer(serializers.Serializer):
             "email": user["email"],
             "role": role,
             "access_token": access_token,
-            "refresh_token": refresh_token,
-            
+            "refresh_token": refresh_token
 
         }
 
@@ -146,6 +146,7 @@ class LoginSerializer(serializers.Serializer):
             user_data["employeeID"] = user.get("employeeID","Not Available")
         elif role == "student":
             user_data["enrollmentNumber"] = user.get("enrollmentNumber","Not Available")
+            user_data["classID"]=user.get("classID",None)
 
         # print(user_data)
 
